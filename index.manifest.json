@@ -1,0 +1,26 @@
+{
+  "name": "Melanie's Mansion of Mayhem",
+  "short_name": "Melanie's Mansion",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#7A1A86",
+  "theme_color": "#7A1A86",
+  "icons": [
+    {
+      "sizes": "144x144",
+      "src": "index.144x144.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "180x180",
+      "src": "index.180x180.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "512x512",
+      "src": "index.512x512.png",
+      "type": "image/png"
+    }
+  ]
+}
