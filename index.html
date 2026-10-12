@@ -160,7 +160,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":44617296,"index.wasm":16838841},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4,"serviceWorker":"index.service.worker.js"};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":44622404,"index.wasm":16838841},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4,"serviceWorker":"index.service.worker.js"};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -275,7 +275,44 @@ const engine = new Engine(GODOT_CONFIG);
 			displayFailureNotice(missingMsg + missing.join('\n'));
 		}
 	} else {
-		setStatusMode('progress');
+		ensureFreshBuild().then((reloading) => {
+			if (reloading) {
+				return;
+			}
+			stampPackUrls();
+			setStatusMode('progress');
+			startEngine();
+		});
+	}
+
+	function stampPackUrls() {
+		const stamp = localStorage.getItem('mansion.build') || '';
+		if (!stamp || window.__mansionFetch) {
+			return;
+		}
+		window.__mansionFetch = window.fetch.bind(window);
+		window.fetch = function (input, init) {
+			try {
+				const raw = typeof input === 'string' ? input : (input && input.url) || '';
+				if (raw.indexOf('index.pck') !== -1 || raw.indexOf('index.wasm') !== -1) {
+					const url = new URL(raw, window.location.href);
+					if (!url.searchParams.has('b')) {
+						url.searchParams.set('b', stamp);
+						if (typeof input === 'string') {
+							input = url.toString();
+						} else {
+							input = new Request(url.toString(), input);
+						}
+					}
+				}
+			} catch (err) {
+				console.error(err);
+			}
+			return window.__mansionFetch(input, init);
+		};
+	}
+
+	function startEngine() {
 		let downloadFinishedAt = 0;
 		const bootWatch = setInterval(() => {
 			if (!initializing) {
@@ -323,6 +360,40 @@ const engine = new Engine(GODOT_CONFIG);
 			clearInterval(bootWatch);
 			displayFailureNotice(err);
 		});
+	}
+
+	function ensureFreshBuild() {
+		return fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then((res) => {
+			if (!res.ok) {
+				return false;
+			}
+			return res.json();
+		}).then((remote) => {
+			if (!remote || !remote.version) {
+				return false;
+			}
+			const stamp = String(remote.version) + ':' + String(remote.pack);
+			const seen = localStorage.getItem('mansion.build');
+			if (seen === stamp) {
+				return false;
+			}
+			const hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+			localStorage.setItem('mansion.build', stamp);
+			if (seen === null && !hadController) {
+				return false;
+			}
+			const wipe = [];
+			if (window.caches) {
+				wipe.push(caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))));
+			}
+			if (navigator.serviceWorker) {
+				wipe.push(navigator.serviceWorker.getRegistrations().then((regs) => Promise.all(regs.map((reg) => reg.unregister()))));
+			}
+			return Promise.all(wipe).then(() => {
+				window.location.reload();
+				return true;
+			});
+		}).catch(() => false);
 	}
 }());
 		</script>

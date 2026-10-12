@@ -4,9 +4,9 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1791766460|3263447';
+const CACHE_VERSION = '1791771020|3413662';
 /** @type {string} */
-const CACHE_PREFIX = 'Melanie's Mansio-sw-cache-';
+const CACHE_PREFIX = "melanies-mansion-sw-cache-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 /** @type {string} */
 const OFFLINE_URL = 'index.offline.html';
@@ -21,6 +21,7 @@ const CACHEABLE_FILES = ["index.wasm","index.pck"];
 const FULL_CACHE = CACHED_FILES.concat(CACHEABLE_FILES);
 
 self.addEventListener('install', (event) => {
+	self.skipWaiting();
 	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(CACHED_FILES)));
 });
 
@@ -28,11 +29,24 @@ self.addEventListener('activate', (event) => {
 	event.waitUntil(caches.keys().then(
 		function (keys) {
 			// Remove old caches.
-			return Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map((key) => caches.delete(key)));
+			return Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)));
 		}
 	).then(function () {
 		// Enable navigation preload if available.
 		return ('navigationPreload' in self.registration) ? self.registration.navigationPreload.enable() : Promise.resolve();
+	}).then(function () {
+		return self.clients.claim();
+	}).then(function () {
+		return self.clients.matchAll({ type: 'window' });
+	}).then(function (clients) {
+		clients.forEach(function (client) {
+			var url = new URL(client.url);
+			if (url.searchParams.get('swbust') === '1') {
+				return;
+			}
+			url.searchParams.set('swbust', '1');
+			client.navigate(url.toString());
+		});
 	}));
 });
 
@@ -72,7 +86,7 @@ async function fetchAndCache(event, cache, isCacheable) {
 	let response = await event.preloadResponse;
 	if (response == null) {
 		// Or, go over network.
-		response = await self.fetch(event.request);
+		response = await self.fetch(event.request, { cache: 'reload' });
 	}
 
 	if (ENSURE_CROSSORIGIN_ISOLATION_HEADERS) {
@@ -102,8 +116,15 @@ self.addEventListener(
 		const isCacheable = FULL_CACHE.some((v) => v === local) || (base === referrer && base.endsWith(CACHED_FILES[0]));
 		if (isNavigate || isCacheable) {
 			event.respondWith((async () => {
-				// Try to use cache first
 				const cache = await caches.open(CACHE_NAME);
+				if (isNavigate) {
+					try {
+						return await fetchAndCache(event, cache, true);
+					} catch (e) {
+						const cachedNav = await cache.match(event.request) || await caches.match(OFFLINE_URL);
+						return cachedNav;
+					}
+				}
 				if (isNavigate) {
 					// Check if we have full cache during HTML page request.
 					/** @type {Response[]} */
