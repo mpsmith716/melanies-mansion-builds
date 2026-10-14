@@ -160,7 +160,19 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":44788144,"index.wasm":16838841},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4,"serviceWorker":"index.service.worker.js"};
+if (!window.mansionVisInstalled) {
+	window.mansionVisInstalled = true;
+	window.mansionVis = '1';
+	var mansionMarkVis = function () {
+		var hidden = document.hidden || document.visibilityState === 'hidden';
+		window.mansionVis = hidden ? '0' : '1';
+	};
+	document.addEventListener('visibilitychange', mansionMarkVis);
+	window.addEventListener('pagehide', function () { window.mansionVis = '0'; });
+	window.addEventListener('blur', function () { window.mansionVis = '0'; });
+	window.addEventListener('focus', mansionMarkVis);
+}
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":44795116,"index.wasm":16838841},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4,"serviceWorker":"index.service.worker.js"};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
