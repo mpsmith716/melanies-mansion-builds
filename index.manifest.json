@@ -18,9 +18,9 @@
       "type": "image/png"
     }
   ],
-  "name": "Melanie's Mansion of Mayhem",
+  "name": "Melanie's Mansion Makeover",
   "orientation": "portrait",
   "start_url": "./index.html",
-  "short_name": "Melanie's Mansion",
+  "short_name": "Melanie's Mansion Makeover",
   "theme_color": "#7A1A86"
 }
