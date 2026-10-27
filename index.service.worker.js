@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1793039261|10018879';
+const CACHE_VERSION = '1793113430|8327459';
 /** @type {string} */
 const CACHE_PREFIX = "melanies-mansion-sw-cache-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
